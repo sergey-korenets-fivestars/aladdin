@@ -35,6 +35,7 @@ def cluster_init(force=False):
         ref = project["ref"]
         project_namespace = project["namespace"]
         repo = project.get("repo") or project_name
+        git_account = project.get("git_account")
         if not force and helm.release_exists(
             f"{project_name}-{project_namespace}", project_namespace
         ):
@@ -47,4 +48,5 @@ def cluster_init(force=False):
             force=True,
             repo=repo,
             set_override_values=[],
+            git_account=git_account
         )

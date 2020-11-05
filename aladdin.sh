@@ -8,15 +8,15 @@ function ctrl_trap(){ exit 1 ; }
 trap ctrl_trap INT
 
 # Set defaults on command line args
-DEV=false
+DEV=true
 INIT=false
-CLUSTER_CODE=minikube
+CLUSTER_CODE=docker-desktop
 NAMESPACE=default
 IS_TERMINAL=true
 SKIP_PROMPTS=false
-MANAGE_MINIKUBE=true
+MANAGE_MINIKUBE=false
 KUBERNETES_VERSION="1.15.6"
-MANAGE_SOFTWARE_DEPENDENCIES=true
+MANAGE_SOFTWARE_DEPENDENCIES=false
 
 # Set key directory paths
 ALADDIN_DIR="$(cd "$(dirname "$0")" ; pwd)"
@@ -67,7 +67,7 @@ function get_manage_minikube() {
     if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
         MANAGE_MINIKUBE=$(jq -r .manage.minikube $HOME/.aladdin/config/config.json)
         if [[ "$MANAGE_MINIKUBE" == null ]]; then
-            MANAGE_MINIKUBE=true
+            MANAGE_MINIKUBE=false
         fi
     fi
 }
@@ -76,7 +76,7 @@ function get_manage_software_dependencies() {
     if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
         MANAGE_SOFTWARE_DEPENDENCIES=$(jq -r .manage.software_dependencies $HOME/.aladdin/config/config.json)
         if [[ "$MANAGE_SOFTWARE_DEPENDENCIES" == null ]]; then
-            MANAGE_SOFTWARE_DEPENDENCIES=true
+            MANAGE_SOFTWARE_DEPENDENCIES=false
         fi
     fi
 }
@@ -121,7 +121,7 @@ function check_and_handle_init() {
         if "$MANAGE_SOFTWARE_DEPENDENCIES"; then
             "$SCRIPT_DIR"/infra_k8s_check.sh
         fi
-        enter_minikube_env
+        # enter_minikube_env
     fi
 }
 
@@ -330,7 +330,7 @@ function prepare_docker_subcommands() {
     fi
 
     if "$DEV" || "$IS_LOCAL"; then
-        MOUNTS_CMD="$MOUNTS_CMD -v /:/aladdin_root"
+        MOUNTS_CMD="$MOUNTS_CMD -v $HOME:/aladdin_root$HOME"
         MOUNTS_CMD="$MOUNTS_CMD -w /aladdin_root$(pathnorm "$PWD")"
     fi
 }
@@ -374,6 +374,7 @@ function enter_docker_container() {
         -e "NAMESPACE=$NAMESPACE" \
         -e "MINIKUBE_IP=$(minikube ip)" \
         -e "IS_LOCAL=$IS_LOCAL" \
+        -e "DOCKER_BUILDKIT=1" \
         -e "IS_PROD=$IS_PROD" \
         -e "IS_TESTING=$IS_TESTING" \
         -e "SKIP_PROMPTS=$SKIP_PROMPTS" \
@@ -388,6 +389,7 @@ function enter_docker_container() {
         -v "$(pathnorm $ALADDIN_CONFIG_DIR):/root/aladdin-config" \
         `# Mount minikube parts` \
         -v /var/run/docker.sock:/var/run/docker.sock \
+        -v /usr/local/bin/docker:/usr/bin/docker \
         `# Specific command` \
         ${MOUNTS_CMD} \
         "$aladdin_image" \
