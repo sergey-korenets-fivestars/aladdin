@@ -1,4 +1,14 @@
 #!/usr/bin/env sh
-python3 -m pip install --user --upgrade pipx
-python3 -m pipx ensurepath
-python3 -m pipx install git+https://github.com/fivestars-os/aladdin.git@${ALADDIN_VERSION:-live}
+git fetch --all --tags --prune
+git checkout ${ALADDIN_VERSION:-live}
+if ! which poetry &>/dev/null ; then
+    echo "Poetry is not installed, please follow the instructions here to install it: https://python-poetry.org/docs/#installation"
+    exit 1
+fi
+export POETRY_VIRTUALENVS_CREATE="true"
+export POETRY_VIRTUALENVS_IN_PROJECT="true"
+poetry install --no-dev
+echo '\naladdin has been successfully installed!\n'
+if ! which aladdin &>/dev/null ; then
+    ./aladdin.sh env -h
+fi
