@@ -3,8 +3,10 @@ set -eu -o pipefail
 
 function env() {
     echo 'function aladdin(){
-        PATH="'$ALADDIN_DIR'/.venv/bin:'$PATH'";
+        OLD_PATH="$PATH";
+        PATH="'$ALADDIN_DIR'/.venv/bin:$PATH";
         '$ALADDIN_DIR'/.venv/bin/aladdin "$@";
+        PATH="$OLD_PATH";
     }'
 }
 
