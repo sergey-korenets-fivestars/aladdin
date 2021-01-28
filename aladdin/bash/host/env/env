@@ -2,17 +2,15 @@
 set -eu -o pipefail
 
 function env() {
-    echo 'export PATH="$PATH:'"$ALADDIN_DIR"\"
-    echo "# Run this command to configure your shell:"
-    echo "# eval \$($ALADDIN_DIR/aladdin.sh env)"
+    echo 'function aladdin(){
+        PATH="'$ALADDIN_DIR'/.venv/bin:$PATH" '$ALADDIN_DIR'/.venv/bin/aladdin "$@";
+    }'
 }
 
 function usage {
     cat <<-EOF
-		usage: aladdin env [-h]
-
-		optional arguments:
-		  -h, --help            show this help message and exit
+		Run this command to configure your shell:
+		eval \$($ALADDIN_DIR/aladdin.sh env)
 	EOF
 }
 
