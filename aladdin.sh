@@ -10,8 +10,8 @@ trap ctrl_trap INT
 # Set defaults on command line args
 DEV=true
 INIT=false
-CLUSTER_CODE=docker-desktop
-NAMESPACE=default
+CLUSTER_CODE=${CLUSTER_CODE:-docker-desktop}
+NAMESPACE=${NAMESPACE:-default}
 IS_TERMINAL=true
 SKIP_PROMPTS=false
 MANAGE_MINIKUBE=false
