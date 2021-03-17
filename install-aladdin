@@ -7,7 +7,7 @@ if ! which poetry &>/dev/null ; then
 fi
 export POETRY_VIRTUALENVS_CREATE="true"
 export POETRY_VIRTUALENVS_IN_PROJECT="true"
-poetry install --no-dev
+poetry install
 echo '\naladdin has been successfully installed!\n'
 if ! which aladdin &>/dev/null ; then
     ./aladdin.sh env -h
