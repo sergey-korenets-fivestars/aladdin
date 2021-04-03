@@ -12,22 +12,30 @@ logger = logging.getLogger(__name__)
 
 
 class Helm(object):
-    PACKAGE_DIR_PATH = "helm_charts/0.0.0/{project_name}/{git_ref}/"
-    PACKAGE_PATH = "helm_charts/0.0.0/{project_name}/{git_ref}/{chart_name}.{git_ref}.tgz"
 
     @property
     def helm_home(self):
         return join(expanduser("~"), ".helm")
 
-    def publish(self, project_name, publish_rules, chart_path, hash):
+    @classmethod
+    def repo_exists(cls, s3_bucket, repo_name):
+        return bool(list(s3_bucket.objects.filter(Prefix=f"{repo_name}/index.yaml")))
 
-        # HelmContext = namedtuple('HelmContext', ['chart_home', 'values_files', 'name'])
+    def publish(self, project_name, publish_rules, chart_path, hash, force=True):
 
-        version = "0.0.0"
+        version = f"1.0+{hash}"
 
         logger.info("Building package")
 
         charts_dir, chart_name = os.path.split(chart_path)
+        helm_repo_name = f"{project_name}/{chart_name}"
+        if not self.repo_exists(publish_rules.s3_bucket, helm_repo_name):
+            subprocess.check_call([
+                "helm",
+                "s3",
+                "init",
+                f"s3://{publish_rules.s3_bucket.name}/{helm_repo_name}"
+            ])
 
         subprocess.check_call([
             "helm",
@@ -37,18 +45,30 @@ class Helm(object):
             chart_name
         ], cwd=charts_dir)
 
-        try:
-            package_path = join(charts_dir, "{}-{}.tgz".format(chart_name, version))
-            bucket_path = self.PACKAGE_PATH.format(
-                project_name=project_name, chart_name=chart_name, git_ref=hash
-            )
+        extra_push_args = []
+        if force:
+            extra_push_args.append("--force")
 
-            logger.info("Uploading %s chart to %s", chart_name, bucket_path)
-            publish_rules.s3_bucket.upload_file(package_path, bucket_path)
+        try:
+            subprocess.check_call([
+                "helm",
+                "repo",
+                "add",
+                helm_repo_name,
+                f"s3://{publish_rules.s3_bucket.name}/{helm_repo_name}"
+            ])
+            subprocess.check_call([
+                "helm",
+                "s3",
+                "push",
+                *extra_push_args,
+                "./{}-{}.tgz".format(chart_name, version),
+                helm_repo_name,
+            ], cwd=charts_dir)
         finally:
             os.remove(package_path)
 
-    def pull_packages(self, project_name, publish_rules, git_ref, extract_dir):
+    def pull_and_extract(self, project_name, chart, publish_rules, git_ref):
         """
         Retrieve all charts published for this project at this git_ref.
 
@@ -59,31 +79,21 @@ class Helm(object):
         :param git_ref: The version of the chart(s) to retrieve.
         :param extract_dir: Where to place the downloaded charts.
         """
-        # List the contents of the publish "directory" and find
-        # everything that looks like a chart.
-        package_keys = [
-            obj.key
-            for obj in publish_rules.s3_bucket.objects.filter(
-                Prefix=self.PACKAGE_DIR_PATH.format(project_name=project_name, git_ref=git_ref)
-            )
-            if obj.key.endswith(f".{git_ref}.tgz")
-        ]
-
-        # Download the chart archives and extract the contents into their own chart sub-directories
-        for package_key in package_keys:
-            downloaded_package = join(extract_dir, os.path.basename(package_key))
+        version = f"1.0+{git_ref}"
+        package = f"{chart}-{version}.tgz"
+        helm_repo_name = f"{project_name}/{chart_name}"
+        try:
+            subprocess.check_call([
+                "helm",
+                "pull",
+                f"s3://{publish_rules.s3_bucket.name}/{helm_repo_name}/{package}"
+            ])
+            subprocess.check_call(["tar", "-xvzf", package])
+        finally:
             try:
-                publish_rules.s3_bucket.download_file(package_key, downloaded_package)
-            except ClientError:
-                logger.error("Error downloading from S3: {}".format(package_key))
-                raise
-            else:
-                subprocess.check_call(["tar", "-xvzf", downloaded_package, "-C", extract_dir])
-            finally:
-                try:
-                    os.remove(downloaded_package)
-                except FileNotFoundError:
-                    pass
+                os.remove(package)
+            except FileNotFoundError:
+                pass
 
     def find_values(self, chart_path, cluster_name, namespace):
         """

@@ -6,8 +6,8 @@ class Git(object):
     SHORT_HASH_SIZE = 10
 
     @classmethod
-    def clone(cls, git_repo, dest_path):
-        subprocess.check_call(["git", "clone", git_repo, dest_path])
+    def empty_clone(cls, git_repo, dest_path):
+        subprocess.check_call(["git", "clone", "-n", "--depth", "1", git_repo, dest_path])
 
     @classmethod
     def init_submodules(cls, git_path):
@@ -17,6 +17,7 @@ class Git(object):
     @classmethod
     def checkout(cls, git_path, ref):
         with working_directory(git_path):
+            subprocess.check_call(["git", "fetch", "--depth", "1", "origin", ref])
             subprocess.check_call(["git", "checkout", ref])
 
     @classmethod

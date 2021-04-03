@@ -1,4 +1,4 @@
-FROM python:3.8.5-buster as build
+FROM python:3.8.8-buster as build
 
 WORKDIR /root/aladdin
 
@@ -10,7 +10,9 @@ ENV PATH /root/.venv/bin:$PATH
 # This is all because we have a pipe in this command and we wish to fail the build
 # if any command in the pipeline fails.
 ARG POETRY_VERSION=1.1.5
-RUN ["/bin/bash", "-c", "set -o pipefail && curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python"]
+RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -o get-poetry.py && \
+    python get-poetry.py --version $POETRY_VERSION && \
+    rm get-poetry.py
 ENV PATH /root/.poetry/bin:$PATH
 
 ARG POETRY_VIRTUALENVS_CREATE="false"
@@ -18,7 +20,7 @@ ARG POETRY_VIRTUALENVS_CREATE="false"
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root
 
-FROM python:3.8.5-slim-buster
+FROM python:3.8.8-slim-buster
 
 # Remove the default $PS1 manipulation
 RUN rm /etc/bash.bashrc
@@ -36,7 +38,7 @@ RUN apt-get update && \
     curl \
     ssh
 
-RUN pip install --no-cache-dir pip==20.2.3
+RUN pip install --no-cache-dir pip==21.0.1
 
 # Update all needed tool versions here
 
@@ -71,8 +73,11 @@ RUN curl -L https://istio.io/downloadIstio | ISTIO_VERSION="$ISTIO_VERSION" sh -
 RUN curl -fL https://metriton.datawire.io/downloads/linux/edgectl -o /usr/local/bin/edgectl && \
     chmod a+x /usr/local/bin/edgectl
 
+ARG HELM_S3_VERSION=0.10.0
+ENV HELM_S3_MODE=3
 # Add datawire helm repo
-RUN helm repo add datawire https://www.getambassador.io
+RUN helm repo add datawire https://www.getambassador.io && \
+    helm plugin install https://github.com/hypnoglow/helm-s3.git --version $HELM_S3_VERSION
 
 WORKDIR /root/aladdin
 

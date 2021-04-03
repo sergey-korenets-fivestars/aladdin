@@ -22,7 +22,7 @@ def parse_args(sub_parser):
     exclude_steps_group.add_argument(
         "--build-only",
         action="store_true",
-        help="only builds docker images in your minikube env with hash and timestamp as tags",
+        help="only builds docker images in your minikube env",
     )
     exclude_steps_group.add_argument(
         "--build-publish-ecr-only",
@@ -87,6 +87,11 @@ def publish(build_only, build_publish_ecr_only, publish_helm_only):
     # tags is a list in case we want to add other tags in the future
     tags = [Git.get_hash()]
 
+    if not build_only and not build_publish_ecr_only:
+        hash = tags[0]
+        for path in pc.get_helm_chart_paths():
+            h.publish(pc.name, pr, path, hash)
+
     if not publish_helm_only:
         for tag in tags:
             env = {"HASH": tag}
@@ -100,10 +105,6 @@ def publish(build_only, build_publish_ecr_only, publish_helm_only):
                 res = d.publish(pr, image_tag, login=False)
                 asso[image_tag] = res
 
-    if not build_only and not build_publish_ecr_only:
-        hash = tags[0]
-        for path in pc.get_helm_chart_paths():
-            h.publish(pc.name, pr, path, hash)
     logging.info(f"Ran publish on {pc.name} with git hash: {tags[0]}")
 
 
@@ -117,7 +118,7 @@ def publish_clean(
     ref = git_ref or g.get_full_hash()
     with tempfile.TemporaryDirectory() as tmpdirname:
         try:
-            g.clone(git_url, tmpdirname)
+            g.empty_clone(git_url, tmpdirname)
         except subprocess.CalledProcessError:
             logging.warn(f"Could not clone repo {git_url}. Does it exist?")
             return
