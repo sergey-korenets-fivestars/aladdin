@@ -116,7 +116,6 @@ function check_and_handle_init() {
         if "$MANAGE_SOFTWARE_DEPENDENCIES"; then
             "$SCRIPT_DIR"/infra_k8s_check.sh --force
         fi
-        check_or_start_k3d
         readonly repo_login_command="$(jq -r '.aladdin.repo_login_command' "$ALADDIN_CONFIG_FILE")"
         if [[ "$repo_login_command" != "null" ]]; then
             eval "$repo_login_command"
@@ -130,7 +129,6 @@ function check_and_handle_init() {
         if "$MANAGE_SOFTWARE_DEPENDENCIES"; then
             "$SCRIPT_DIR"/infra_k8s_check.sh
         fi
-        check_or_start_k3d
     fi
 }
 
