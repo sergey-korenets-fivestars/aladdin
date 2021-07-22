@@ -90,13 +90,11 @@ function environment_init() {
 
         if "$IS_LOCAL"; then
             mkdir -p $HOME/.kube/
-            sed "s;https://0.0.0.0:$K3D_API_PORT;https://$HOST_ADDR:$K3D_API_PORT;g" $HOME/.kube_local/config > $HOME/.kube/config
-            kubectl config set-context "$NAMESPACE.k3d-$CLUSTER_NAME" --cluster "k3d-$CLUSTER_NAME" --namespace="$NAMESPACE" --user "admin@k3d-$CLUSTER_NAME"
-            kubectl config use-context "$NAMESPACE.k3d-$CLUSTER_NAME"
+            cp $HOME/.kube_local/config $HOME/.kube/config
         else
             cp $HOME/.kube/config $HOME/.kube_local/$CLUSTER_NAME.config
             kubectl config set-context "$NAMESPACE.$CLUSTER_NAME" --cluster "$CLUSTER_NAME" --namespace="$NAMESPACE" --user "$CLUSTER_NAME"
-            kubectl config use-context "$NAMESPACE.$CLUSTER_NAME"            
+            kubectl config use-context "$NAMESPACE.$CLUSTER_NAME"
         fi
 
         _handle_authentication_config

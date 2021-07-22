@@ -75,21 +75,21 @@ function get_config_variables() {
         fi
     fi
     # Get k3d service port
-    K3D_SERVICE_PORT=8081 # default value
-    if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
-        K3D_SERVICE_PORT=$(jq -r .k3d.service_port $HOME/.aladdin/config/config.json)
-        if [[ "$K3D_SERVICE_PORT" == null ]]; then
-            K3D_SERVICE_PORT=8081
-        fi
-    fi
-    # Get k3d api port
-    K3D_API_PORT=6550 # default value
-    if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
-        K3D_API_PORT=$(jq -r .k3d.api_port $HOME/.aladdin/config/config.json)
-        if [[ "$K3D_API_PORT" == null ]]; then
-            K3D_API_PORT=6550
-        fi
-    fi
+    # K3D_SERVICE_PORT=8081 # default value
+    # if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
+    #     K3D_SERVICE_PORT=$(jq -r .k3d.service_port $HOME/.aladdin/config/config.json)
+    #     if [[ "$K3D_SERVICE_PORT" == null ]]; then
+    #         K3D_SERVICE_PORT=8081
+    #     fi
+    # fi
+    # # Get k3d api port
+    # K3D_API_PORT=6550 # default value
+    # if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
+    #     K3D_API_PORT=$(jq -r .k3d.api_port $HOME/.aladdin/config/config.json)
+    #     if [[ "$K3D_API_PORT" == null ]]; then
+    #         K3D_API_PORT=6550
+    #     fi
+    # fi
 }
 
 function get_host_addr() {
@@ -253,7 +253,10 @@ function prepare_volume_mount_options() {
 
 function prepare_ssh_options() {
     local ssh_src
-
+    case "$OSTYPE" in
+        cygwin*) ssh_src="/.ssh" ;;
+        *)       ssh_src="$(pathnorm ~/.ssh)" ;;
+    esac
     if $(jq -r '.ssh.agent // false' $HOME/.aladdin/config/config.json ); then
         # Give the container access to the agent socket and tell it where to find it
         if [[ -z ${SSH_AUTH_SOCK:-} ]]; then
@@ -263,10 +266,6 @@ function prepare_ssh_options() {
         SSH_OPTIONS="-e SSH_AUTH_SOCK=${SSH_AUTH_SOCK} -v ${SSH_AUTH_SOCK}:${SSH_AUTH_SOCK}"
     else
         # Default behavior is to attempt to mount the host's .ssh directory into root's home.
-        case "$OSTYPE" in
-            cygwin*) ssh_src="/.ssh" ;;
-            *)       ssh_src="$(pathnorm ~/.ssh)" ;;
-        esac
         SSH_OPTIONS="-v ${ssh_src}:/root/.ssh"
     fi
 }
@@ -295,7 +294,6 @@ function enter_docker_container() {
         -e "IS_PROD=$IS_PROD" \
         -e "IS_TESTING=$IS_TESTING" \
         -e "SKIP_PROMPTS=$SKIP_PROMPTS" \
-        -e "K3D_API_PORT=$K3D_API_PORT" \
         -e "HOST_ADDR=$HOST_ADDR" \
         -e "command=$command" \
         `# Mount host credentials` \
