@@ -75,21 +75,21 @@ function get_config_variables() {
         fi
     fi
     # Get k3d service port
-    # K3D_SERVICE_PORT=8081 # default value
-    # if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
-    #     K3D_SERVICE_PORT=$(jq -r .k3d.service_port $HOME/.aladdin/config/config.json)
-    #     if [[ "$K3D_SERVICE_PORT" == null ]]; then
-    #         K3D_SERVICE_PORT=8081
-    #     fi
-    # fi
-    # # Get k3d api port
-    # K3D_API_PORT=6550 # default value
-    # if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
-    #     K3D_API_PORT=$(jq -r .k3d.api_port $HOME/.aladdin/config/config.json)
-    #     if [[ "$K3D_API_PORT" == null ]]; then
-    #         K3D_API_PORT=6550
-    #     fi
-    # fi
+    K3D_SERVICE_PORT=8081 # default value
+    if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
+        K3D_SERVICE_PORT=$(jq -r .k3d.service_port $HOME/.aladdin/config/config.json)
+        if [[ "$K3D_SERVICE_PORT" == null ]]; then
+            K3D_SERVICE_PORT=8081
+        fi
+    fi
+    # Get k3d api port
+    K3D_API_PORT=6550 # default value
+    if [[ -f "$HOME/.aladdin/config/config.json" ]]; then
+        K3D_API_PORT=$(jq -r .k3d.api_port $HOME/.aladdin/config/config.json)
+        if [[ "$K3D_API_PORT" == null ]]; then
+            K3D_API_PORT=6550
+        fi
+    fi
 }
 
 function get_host_addr() {
