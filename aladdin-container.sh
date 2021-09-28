@@ -87,7 +87,12 @@ function environment_init() {
 
     # Make sure we are on local or that cluster has been created before creating namespaces, etc
     if _is_cluster_ready; then
-
+        if [ ! -f /root/.ssh/config ]
+        then
+            mkdir -p $HOME/.ssh/
+            git config --global url.ssh://git@github.com/.insteadOf https://github.com/
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tForwardAgent yes\n" > $HOME/.ssh/config
+        fi
         if "$IS_LOCAL"; then
             mkdir -p $HOME/.kube/
             cp $HOME/.kube_local/config $HOME/.kube/config
