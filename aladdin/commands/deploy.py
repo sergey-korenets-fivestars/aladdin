@@ -62,8 +62,8 @@ def deploy(
     force_helm=False,
     repo=None,
     set_override_values=None,
+    values_files=None,
     git_account=None,
-    values_files=None
 ):
     if set_override_values is None:
         set_override_values = []
